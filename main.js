@@ -92,7 +92,7 @@ function draw() {
     let allCoordinates = [];
     let i = 0;
 
-    /* Draw the six faces of a cube, with different colors. */
+    // Apply equations and draw horizontal meridians
     for (let r = 0; r <= 7; r += Math.PI / 8) {
         let coordinates = [];
 
@@ -108,6 +108,7 @@ function draw() {
         coordinates = [];
     }
 
+    // Draw vertical meridians
     for (let j = 0; j < allCoordinates[0].length; j += 3) {
         let coordinates = [];
 
@@ -136,17 +137,9 @@ function draw() {
     }
 
     // console.log(coordinates);
-
     // drawPrimitive(gl.LINE_STRIP, [1, 1, 0, 0.5], coordinates);
 
-    // drawPrimitive(gl.TRIANGLE_FAN, [1, 0, 0, 1], [-1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1], [0, 0, 1, 0, 1, 1, 0, 1],);
-    // drawPrimitive(gl.TRIANGLE_FAN, [0, 1, 0, 1], [-1, -1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1], [0, 0, 0, 1, 1, 1, 1, 0]);
-    // drawPrimitive(gl.TRIANGLE_FAN, [0, 0, 1, 1], [-1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1], [0, 0, 0, 1, 1, 1, 1, 0]);
-    // drawPrimitive(gl.TRIANGLE_FAN, [1, 1, 0, 1], [-1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1], [0, 0, 1, 0, 1, 1, 0, 1]);
-    // drawPrimitive(gl.TRIANGLE_FAN, [1, 0, 1, 1], [1, -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1], [0, 0, 1, 0, 1, 1, 0, 1]);
-    // drawPrimitive(gl.TRIANGLE_FAN, [0, 1, 1, 1], [-1, -1, -1, -1, -1, 1, -1, 1, 1, -1, 1, -1], [0, 0, 0, 1, 1, 1, 1, 0]);
-
-    /* Draw coordinate axes as thick colored lines that extend through the cube. */
+    /* Draw coordinate axes */
     gl.lineWidth(4);
     drawPrimitive(gl.LINES, [1, 0, 0, 1], [-9, 0, 0, 9, 0, 0]);
     drawPrimitive(gl.LINES, [0, 1, 0, 1], [0, -9, 0, 0, 9, 0]);
@@ -186,16 +179,16 @@ function LoadTexture() {
     // Fill the texture with a 1x1 blue pixel.
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
     // Asynchronously load an image
-    // var image = new Image();
-    // image.crossOrigin = 'anonymous';
-    // image.src = "https://webglfundamentals.org/webgl/resources/f-texture.png";
-    // image.addEventListener('load', () => {
-    //     // Now that the image has loaded make copy it to the texture.
-    //     gl.bindTexture(gl.TEXTURE_2D, texture);
-    //     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-    //
-    //     draw();
-    // });
+    var image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.src = "https://webglfundamentals.org/webgl/resources/f-texture.png";
+    image.addEventListener('load', () => {
+        // Now that the image has loaded make copy it to the texture.
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+        draw();
+    });
 }
 
 /* Creates a program for use in the WebGL context gl, and returns the
@@ -260,6 +253,6 @@ function init() {
 }
 
 function handleCheckboxChange() {
-    isFilled=document.getElementById("isFilled").checked;
+    isFilled = document.getElementById("isFilled").checked;
     draw();
 }
