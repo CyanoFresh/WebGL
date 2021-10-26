@@ -16,6 +16,7 @@ let iTexBuffer;                 // Buffer to hold the values.
 let spaceball;                  // A SimpleRotator object that lets the user rotate the view by mouse.
 
 let isFilled = false;
+let eyeSeparation = 70;
 
 const R = 1;
 const a = 1;
@@ -59,36 +60,7 @@ function drawPrimitive(primitiveType, color, vertices, texCoords) {
     gl.drawArrays(primitiveType, 0, vertices.length / 3);
 }
 
-
-/* Draws a colored cube, along with a set of coordinate axes.
- * (Note that the use of the above drawPrimitive function is not an efficient
- * way to draw with WebGL.  Here, the geometry is so simple that it doesn't matter.)
- */
-function draw() {
-    gl.clearColor(0, 0, 0, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-    /* Set the values of the projection transformation */
-    let projection = m4.perspective(Math.PI / 2, aspect, 1, 2000);
-
-    /* Get the view matrix from the SimpleRotator object.*/
-    let modelView = spaceball.getViewMatrix();
-
-    let rotateToPointZero = m4.axisRotation([0.707, 0.707, 0], 0.7);
-    let translateToPointZero = m4.translation(0, 0, -10);
-
-    let matAccum0 = m4.multiply(rotateToPointZero, modelView);
-    let matAccum1 = m4.multiply(translateToPointZero, matAccum0);
-
-    /* Multiply the projection matrix times the modelview matrix to give the
-       combined transformation matrix, and send that to the shader program. */
-    let modelViewProjection = m4.multiply(projection, matAccum1);
-
-    gl.uniformMatrix4fv(iModelViewProjectionMatrix, false, modelViewProjection);
-
-    gl.uniform1i(iTextureMappingUnit, 0);
-
+function DrawSurface() {
     let allCoordinates = [];
     let i = 0;
 
@@ -136,9 +108,6 @@ function draw() {
         }
     }
 
-    // console.log(coordinates);
-    // drawPrimitive(gl.LINE_STRIP, [1, 1, 0, 0.5], coordinates);
-
     /* Draw coordinate axes */
     gl.lineWidth(4);
     drawPrimitive(gl.LINES, [1, 0, 0, 1], [-9, 0, 0, 9, 0, 0]);
@@ -147,6 +116,108 @@ function draw() {
     gl.lineWidth(1);
 }
 
+
+/* Draws a colored cube, along with a set of coordinate axes.
+ * (Note that the use of the above drawPrimitive function is not an efficient
+ * way to draw with WebGL.  Here, the geometry is so simple that it doesn't matter.)
+ */
+function draw() {
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+
+    /* Get the view matrix from the SimpleRotator object.*/
+    let modelView = spaceball.getViewMatrix();
+
+    let rotateToPointZero = m4.axisRotation([0.707, 0.707, 0], 0.7);
+    let translateToPointZero = m4.translation(0, 0, -10);
+
+    let matAccum0 = m4.multiply(rotateToPointZero, modelView);
+    let matAccum1 = m4.multiply(translateToPointZero, matAccum0);
+
+    let cam = new StereoCamera(
+        2000,
+        eyeSeparation,
+        aspect,
+        90,
+        1,
+        20000
+    );
+
+    let modelViewProjectionL = m4.multiply(cam.getLeftFrustum(), matAccum1);
+    let modelViewProjectionR = m4.multiply(cam.getRightFrustum(), matAccum1);
+
+    gl.uniformMatrix4fv(iModelViewProjectionMatrix, false, modelViewProjectionL);
+    gl.colorMask(true, false, false, false);
+
+    DrawSurface();
+
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+
+    gl.uniformMatrix4fv(iModelViewProjectionMatrix, false, modelViewProjectionR);
+    gl.colorMask(false, true, true, false);
+
+    DrawSurface();
+
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+
+    gl.colorMask(true, true, true, true);
+}
+
+class StereoCamera {
+    constructor(
+        Convergence,
+        EyeSeparation,
+        AspectRatio,
+        FOV,
+        NearClippingDistance,
+        FarClippingDistance
+    ) {
+        this.mConvergence = Convergence;
+        this.mEyeSeparation = EyeSeparation;
+        this.mAspectRatio = AspectRatio;
+        this.mFOV = FOV * Math.PI / 180
+        this.mNearClippingDistance = NearClippingDistance;
+        this.mFarClippingDistance = FarClippingDistance;
+    }
+
+    getLeftFrustum() {
+        const top = this.mNearClippingDistance * Math.tan(this.mFOV / 2);
+        const bottom = -top;
+
+        const a = this.mAspectRatio * Math.tan(this.mFOV / 2) * this.mConvergence;
+        const b = a - this.mEyeSeparation / 2;
+        const c = a + this.mEyeSeparation / 2;
+
+        const left = -b * this.mNearClippingDistance / this.mConvergence;
+        const right = c * this.mNearClippingDistance / this.mConvergence;
+
+        const translate = m4.translation(this.mEyeSeparation / 2 / 100, 0, 0);
+
+        const projection = m4.frustum(left, right, bottom, top, this.mNearClippingDistance, this.mFarClippingDistance);
+
+        return m4.multiply(projection, translate)
+    }
+
+    getRightFrustum() {
+        const top = this.mNearClippingDistance * Math.tan(this.mFOV / 2);
+        const bottom = -top;
+
+        const a = this.mAspectRatio * Math.tan(this.mFOV / 2) * this.mConvergence;
+        const b = a - this.mEyeSeparation / 2;
+        const c = a + this.mEyeSeparation / 2;
+
+        const left = -c * this.mNearClippingDistance / this.mConvergence;
+        const right = b * this.mNearClippingDistance / this.mConvergence;
+
+        const translate = m4.translation(-this.mEyeSeparation / 2 / 100, 0, 0);
+
+        const projection = m4.frustum(left, right, bottom, top, this.mNearClippingDistance, this.mFarClippingDistance);
+
+        return m4.multiply(projection, translate)
+    }
+}
 
 /* Initialize the WebGL context. Called from init() */
 function initGL() {
@@ -167,28 +238,6 @@ function initGL() {
     // LoadTexture();
 
     gl.enable(gl.DEPTH_TEST);
-}
-
-function LoadTexture() {
-    // Create a texture.
-    var texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-    // Fill the texture with a 1x1 blue pixel.
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
-    // Asynchronously load an image
-    var image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.src = "https://webglfundamentals.org/webgl/resources/f-texture.png";
-    image.addEventListener('load', () => {
-        // Now that the image has loaded make copy it to the texture.
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-
-        draw();
-    });
 }
 
 /* Creates a program for use in the WebGL context gl, and returns the
@@ -254,5 +303,10 @@ function init() {
 
 function handleCheckboxChange() {
     isFilled = document.getElementById("isFilled").checked;
+    draw();
+}
+
+function handleEyeSeparationChange() {
+    eyeSeparation = parseInt(document.getElementById("eye_separation").value);
     draw();
 }

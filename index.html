@@ -29,8 +29,13 @@
 (On a touch screen, you can use your finger.)</p>
 
 <div>
-   <input type="checkbox" id="isFilled" name="isFilled" onchange="handleCheckboxChange()">
+   <input type="checkbox" id="isFilled" onchange="handleCheckboxChange()">
    <label for="isFilled">Filled</label>
+</div>
+
+<div>
+   <input type="range" id="eye_separation" min="1" max="200" onchange="handleEyeSeparationChange()">
+   <label for="eye_separation">Eye separation</label>
 </div>
 
 <div id="canvas-holder">
