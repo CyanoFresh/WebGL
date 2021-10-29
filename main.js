@@ -180,40 +180,33 @@ class StereoCamera {
         this.mFOV = FOV * Math.PI / 180
         this.mNearClippingDistance = NearClippingDistance;
         this.mFarClippingDistance = FarClippingDistance;
+
+        this.top = this.mNearClippingDistance * Math.tan(this.mFOV / 2);
+        this.bottom = -top;
+
+        this.a = this.mAspectRatio * Math.tan(this.mFOV / 2) * this.mConvergence;
+        this.b = this.a - this.mEyeSeparation / 2;
+        this.c = this.a + this.mEyeSeparation / 2;
     }
 
     getLeftFrustum() {
-        const top = this.mNearClippingDistance * Math.tan(this.mFOV / 2);
-        const bottom = -top;
-
-        const a = this.mAspectRatio * Math.tan(this.mFOV / 2) * this.mConvergence;
-        const b = a - this.mEyeSeparation / 2;
-        const c = a + this.mEyeSeparation / 2;
-
-        const left = -b * this.mNearClippingDistance / this.mConvergence;
-        const right = c * this.mNearClippingDistance / this.mConvergence;
+        const left = -this.b * this.mNearClippingDistance / this.mConvergence;
+        const right = this.c * this.mNearClippingDistance / this.mConvergence;
 
         const translate = m4.translation(this.mEyeSeparation / 2 / 100, 0, 0);
 
-        const projection = m4.frustum(left, right, bottom, top, this.mNearClippingDistance, this.mFarClippingDistance);
+        const projection = m4.frustum(left, right, this.bottom, this.top, this.mNearClippingDistance, this.mFarClippingDistance);
 
         return m4.multiply(projection, translate)
     }
 
     getRightFrustum() {
-        const top = this.mNearClippingDistance * Math.tan(this.mFOV / 2);
-        const bottom = -top;
-
-        const a = this.mAspectRatio * Math.tan(this.mFOV / 2) * this.mConvergence;
-        const b = a - this.mEyeSeparation / 2;
-        const c = a + this.mEyeSeparation / 2;
-
-        const left = -c * this.mNearClippingDistance / this.mConvergence;
-        const right = b * this.mNearClippingDistance / this.mConvergence;
+        const left = -this.c * this.mNearClippingDistance / this.mConvergence;
+        const right = this.b * this.mNearClippingDistance / this.mConvergence;
 
         const translate = m4.translation(-this.mEyeSeparation / 2 / 100, 0, 0);
 
-        const projection = m4.frustum(left, right, bottom, top, this.mNearClippingDistance, this.mFarClippingDistance);
+        const projection = m4.frustum(left, right, this.bottom, this.top, this.mNearClippingDistance, this.mFarClippingDistance);
 
         return m4.multiply(projection, translate)
     }
