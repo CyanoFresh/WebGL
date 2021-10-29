@@ -182,7 +182,7 @@ class StereoCamera {
         this.mFarClippingDistance = FarClippingDistance;
 
         this.top = this.mNearClippingDistance * Math.tan(this.mFOV / 2);
-        this.bottom = -top;
+        this.bottom = -this.top;
 
         this.a = this.mAspectRatio * Math.tan(this.mFOV / 2) * this.mConvergence;
         this.b = this.a - this.mEyeSeparation / 2;
