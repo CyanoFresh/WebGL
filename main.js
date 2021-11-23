@@ -66,9 +66,9 @@ const degtorad = Math.PI / 180; // Degree-to-Radian conversion
 
 function getRotationMatrix( alpha, beta, gamma ) {
 
-    const _x = beta  ? beta  * degtorad : 0; // beta value
-    const _y = gamma ? gamma * degtorad : 0; // gamma value
-    const _z = alpha ? alpha * degtorad : 0; // alpha value
+    const _x = beta  ? -beta  * degtorad : 0; // beta value
+    const _y = gamma ? -gamma * degtorad : 0; // gamma value
+    const _z = alpha ? -alpha * degtorad : 0; // alpha value
 
     const cX = Math.cos( _x );
     const cY = Math.cos( _y );
