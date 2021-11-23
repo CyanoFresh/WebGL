@@ -18,6 +18,8 @@ let spaceball;                  // A SimpleRotator object that lets the user rot
 let isFilled = false;
 let eyeSeparation = 70;
 
+let rotationMatrix = getRotationMatrix();
+
 const R = 1;
 const a = 1;
 const n = 1;
@@ -59,6 +61,51 @@ function drawPrimitive(primitiveType, color, vertices, texCoords) {
 
     gl.drawArrays(primitiveType, 0, vertices.length / 3);
 }
+
+const degtorad = Math.PI / 180; // Degree-to-Radian conversion
+
+function getRotationMatrix( alpha, beta, gamma ) {
+
+    const _x = beta  ? beta  * degtorad : 0; // beta value
+    const _y = gamma ? gamma * degtorad : 0; // gamma value
+    const _z = alpha ? alpha * degtorad : 0; // alpha value
+
+    const cX = Math.cos( _x );
+    const cY = Math.cos( _y );
+    const cZ = Math.cos( _z );
+    const sX = Math.sin( _x );
+    const sY = Math.sin( _y );
+    const sZ = Math.sin( _z );
+
+    //
+    // ZXY rotation matrix construction.
+    //
+
+    const m11 = cZ * cY - sZ * sX * sY;
+    const m12 = - cX * sZ;
+    const m13 = cY * sZ * sX + cZ * sY;
+
+    const m21 = cY * sZ + cZ * sX * sY;
+    const m22 = cZ * cX;
+    const m23 = sZ * sY - cZ * cY * sX;
+
+    const m31 = - cX * sY;
+    const m32 = sX;
+    const m33 = cX * cY;
+
+    return [
+        m11, m12, m13, 0,
+        m21, m22, m23, 0,
+        m31, m32, m33, 0,
+        0, 0, 0, 1
+    ];
+
+}
+
+window.addEventListener('deviceorientation', function(event) {
+    rotationMatrix = getRotationMatrix(event.alpha, event.beta, event.gamma);
+    draw();
+});
 
 function DrawSurface() {
     let allCoordinates = [];
@@ -133,7 +180,8 @@ function draw() {
     let rotateToPointZero = m4.axisRotation([0.707, 0.707, 0], 0.7);
     let translateToPointZero = m4.translation(0, 0, -10);
 
-    let matAccum0 = m4.multiply(rotateToPointZero, modelView);
+    let matAccum = m4.multiply(rotateToPointZero, modelView);
+    let matAccum0 = m4.multiply(matAccum, rotationMatrix);
     let matAccum1 = m4.multiply(translateToPointZero, matAccum0);
 
     let cam = new StereoCamera(
